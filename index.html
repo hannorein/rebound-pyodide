@@ -28,7 +28,8 @@
           async function updatePlot(){
             await pyodide.runPython(`
             sim.integrate(sim.t+10.0)
-            fig, ax = rebound.OrbitPlot(sim,xlim=[-40,40], ylim=[-40,40])
+            fancy = document.getElementById("fancy").checked
+            fig, ax = rebound.OrbitPlot(sim,xlim=[-40,40], ylim=[-40,40], fancy=fancy)
             buf = io.BytesIO()
             fig.savefig(buf, format='png')
             buf.seek(0)
@@ -44,19 +45,27 @@
             `);
             setTimeout(updatePlot, 30);
           }
-        setTimeout(updatePlot, 10);
+        updatePlot();
       }
       main();
     </script>
-    <h2>REBOUND</h2><br />
+    <h2>REBOUND</h2>
     <p>
-    What you see here is a N-body simulation of the outer Solar System using the REBOUND N-body integrator. It's using the python interface of REBOUND to setup the simulation, and matplotlib to render the orbits. All of this is done within a your browser using pyodide. The server is only serving a static website. There is no need to install anything. There is no need to worry about resource allocation or user accounts on a backend server running Jupyter. And because this is compiled C code using WebAssembly, the speed can be almost as fast as running it natively on your computer (slowed down here for the visualization).  </p>
-    <img id="fig" /> <br />
+    What you see here is an N-body simulation of the outer Solar System using the REBOUND N-body package and the WHFast integrator. It's using the python interface of REBOUND to setup the simulation, and matplotlib to render the orbits. All of this is done within a your browser using pyodide. The server is only serving a static website. There is no need to install anything. There is no need to worry about resource allocation or user accounts on a backend server. And because this is compiled C code using WebAssembly, the speed can be almost as fast as running it natively on your computer (slowed down here because of rendering the visualization).  </p>
+    <p>
+    <input type="checkbox" id="fancy" name="fancy">
+<label for="fancy"> I want a fancy plot.</label><br>
+    </p>
+    <div>
+    <img id="fig" /> 
+    </div>
     <p>
     Simulation time (years): <span id="time" /><br />
     </p>
     <p>
     Relative energy error: <span id="energy" /><br />
     </p>
+
+
   </body>
 </html>
