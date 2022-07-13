@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      async function main(){
+        let pyodide = await loadPyodide();
+        await pyodide.loadPackage("http://rebound.hanno-rein.de/rebound-3.19.4-cp310-cp310-emscripten_3_1_14_wasm32.whl");
+        console.log(pyodide.runPython("import rebound"));
+      }
+      main();
+    </script>
+  </body>
+</html>
