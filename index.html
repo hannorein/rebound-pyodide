@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+      <link rel="stylesheet" href="fontawesome-free-6.1.1-web/css/fontawesome.min.css">
       <script src="https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js"></script>
   </head>
   <body>
@@ -8,9 +9,54 @@
       async function main(){
         let pyodide = await loadPyodide();
         await pyodide.loadPackage("http://rebound.hanno-rein.de/rebound-3.19.4-cp310-cp310-emscripten_3_1_14_wasm32.whl");
-        console.log(pyodide.runPython("import rebound"));
+        await pyodide.loadPackage("matplotlib");
+        pyodide.runPython(`
+        from js import document
+        import rebound
+        import math
+        import matplotlib
+        import io, base64
+
+
+        import matplotlib.pyplot as plt
+        sim = rebound.Simulation()
+        rebound.data.add_outer_solar_system(sim)
+        sim.integrator = "whfast"
+        sim.dt = sim.particles[1].P/30.
+        E0 = sim.calculate_energy()
+        `);
+          async function updatePlot(){
+            await pyodide.runPython(`
+            sim.integrate(sim.t+10.0)
+            fig, ax = rebound.OrbitPlot(sim,xlim=[-40,40], ylim=[-40,40])
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png')
+            buf.seek(0)
+            img_str = 'data:image/png;base64,' + base64.b64encode(buf.read()).decode('UTF-8')
+            img_tag = document.getElementById('fig')
+            img_tag.src = img_str
+            document.getElementById('time').innerHTML = "%.3f"%(sim.t/2./math.pi)
+            E1 = sim.calculate_energy()
+            document.getElementById('energy').innerHTML = "%.2e"%(math.fabs((E1-E0)/E0))
+            buf.close()
+            plt.close(fig)
+     
+            `);
+            setTimeout(updatePlot, 30);
+          }
+        setTimeout(updatePlot, 10);
       }
       main();
     </script>
+    <h2>REBOUND</h2><br />
+    <p>
+    What you see here is a N-body simulation of the outer Solar System using the REBOUND N-body integrator. It's using the python interface of REBOUND to setup the simulation, and matplotlib to render the orbits. All of this is done within a your browser using pyodide. The server is only serving a static website. There is no need to install anything. There is no need to worry about resource allocation or user accounts on a backend server running Jupyter. And because this is compiled C code using WebAssembly, the speed can be almost as fast as running it natively on your computer (slowed down here for the visualization).  </p>
+    <img id="fig" /> <br />
+    <p>
+    Simulation time (years): <span id="time" /><br />
+    </p>
+    <p>
+    Relative energy error: <span id="energy" /><br />
+    </p>
   </body>
 </html>
