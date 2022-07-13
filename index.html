@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
   <head>
-      <link rel="stylesheet" href="fontawesome-free-6.1.1-web/css/fontawesome.min.css">
       <script src="https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js"></script>
   </head>
   <body>
@@ -51,7 +50,7 @@
     </script>
     <h2>REBOUND</h2>
     <p>
-    What you see here is an N-body simulation of the outer Solar System using the REBOUND N-body package and the WHFast integrator. It's using the python interface of REBOUND to setup the simulation, and matplotlib to render the orbits. All of this is done within a your browser using pyodide. The server is only serving a static website. There is no need to install anything. There is no need to worry about resource allocation or user accounts on a backend server. And because this is compiled C code using WebAssembly, the speed can be almost as fast as running it natively on your computer (slowed down here because of rendering the visualization).  </p>
+    What you see here is an N-body simulation of the outer Solar System using the <a href="https://github.com/hannorein/rebound">REBOUND N-body package</a> and the <a href="https://arxiv.org/abs/1506.01084">WHFast integrator</a>. It's using the <a href="https://rebound.readthedocs.io/en/latest/quickstart_firstexample/#python-version">python interface of REBOUND</a> to setup the simulation, and matplotlib to render the orbits. All of this is done within a your browser using <a href="https://pyodide.org/">pyodide</a>. The server is only serving a static website. There is no need to install anything. There is no need to worry about resource allocation or user accounts on a backend server. And because this is compiled C code using WebAssembly, the speed can be almost as fast as running it natively on your computer (slowed down here because it's rendering the visualization).  </p>
     <p>
     <input type="checkbox" id="fancy" name="fancy">
 <label for="fancy"> I want a fancy plot.</label><br>
