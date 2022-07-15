@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      let pyodide;
+      async function main(){
+        pyodide = await loadPyodide();
+        await pyodide.loadPackage("http://rebound.hanno-rein.de/rebound-3.19.4-cp310-cp310-emscripten_3_1_14_wasm32.whl");
+        await pyodide.loadPackage("matplotlib");
+        pyodide.runPython(`
+        from js import document
+        import rebound
+        import math
+        import matplotlib.pyplot as plt
+        import io, base64
+
+        def getf(elementid):
+            return float(document.getElementById(elementid).value)
+        def setf(elementid, value):
+            document.getElementById(elementid).value = value
+
+
+        `);
+      }
+          function update(e){
+            e.preventDefault();
+            pyodide.runPython(`
+            sim = rebound.Simulation()
+            sim.G = getf("G")
+            sim.add(m=getf("m0"), x=getf("x0"), y=getf("y0"), z=getf("vz0"), vx=getf("vx0"), vy=getf("vy0"), vz=getf("vz0"))
+            sim.add(m=getf("m1"), x=getf("x1"), y=getf("y1"), z=getf("vz1"), vx=getf("vx1"), vy=getf("vy1"), vz=getf("vz1"))
+
+            o = sim.calculate_orbits()[0]
+            setf("a", o.a)
+            setf("e", o.e)
+            setf("P", o.P)
+
+            fig, ax = rebound.OrbitPlot(sim)
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png')
+            buf.seek(0)
+            img_str = 'data:image/png;base64,' + base64.b64encode(buf.read()).decode('UTF-8')
+            img_tag = document.getElementById('fig')
+            img_tag.src = img_str
+            buf.close()
+            plt.close(fig)
+     
+            `);
+            return false;
+          }
+      main();
+    </script>
+    <h1>REBOUND - Orbital Element Calculator</h1>
+    <form onclick="return update(event)" action="#" method="get">
+        <h3>Constants</h3>
+        <label for="G"> Gravitational constant</label><br>
+        <input type="text" id="G" name="G" value="1.0">
+        <table>
+            <tr>
+                <td valign="top">
+                    <h2>Cartesian coordinates</h2>
+                    <h3>Primary</h3>
+                    <table>
+                        <tr>
+                            <td>
+                                <label for="m0">Mass</label><br>
+                            </td>
+                            <td>
+                                <input type="text" id="m0" name="m0" value="1.0">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="x0">x position</label><br> </td>
+                            <td> <input type="text" id="x0" name="x0" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="y0">y position</label><br> </td>
+                            <td> <input type="text" id="y0" name="y0" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="z0">z position</label><br> </td>
+                            <td> <input type="text" id="z0" name="z0" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="vx0">x velocity</label><br> </td>
+                            <td> <input type="text" id="vx0" name="vx0" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="vy0">y velocity</label><br> </td>
+                            <td> <input type="text" id="vy0" name="vy0" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="vz0">z velocity</label><br> </td>
+                            <td> <input type="text" id="vz0" name="vz0" value="0.0"> </td>
+                        </tr>
+                    </table>
+                    <h3>Secondary</h3>
+                    <table>
+                        <tr>
+                            <td>
+                                <label for="m1">Mass</label><br>
+                            </td>
+                            <td>
+                                <input type="text" id="m1" name="m1" value="0.0">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="x1">x position</label><br> </td>
+                            <td> <input type="text" id="x1" name="x1" value="1.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="y1">y position</label><br> </td>
+                            <td> <input type="text" id="y1" name="y1" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="z1">z position</label><br> </td>
+                            <td> <input type="text" id="z1" name="z1" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="vx1">x velocity</label><br> </td>
+                            <td> <input type="text" id="vx1" name="vx1" value="0.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="vy1">y velocity</label><br> </td>
+                            <td> <input type="text" id="vy1" name="vy1" value="1.0"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="vz1">z velocity</label><br> </td>
+                            <td> <input type="text" id="vz1" name="vz1" value="0.0"> </td>
+                        </tr>
+                    </table>
+                </td>
+                <td>
+                    <button>--&gt; convert to orbital elements --&gt;</button>
+                </td>
+                <td valign="top">
+                    <h2>Orbital elements</h2>
+                    <table>
+                        <tr>
+                            <td> <label for="a">semi-major axis</label><br> </td>
+                            <td> <input type="text" id="a" name="a"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="a">eccentricity</label><br> </td>
+                            <td> <input type="text" id="e" name="e"> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="a">orbital period</label><br> </td>
+                            <td> <input type="text" id="P" name="P"> </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </form>
+    </p>
+    <h2>Orbit illustration</h2>
+    <div>
+        <img id="fig" /> 
+    </div>
+
+  </body>
+</html>
