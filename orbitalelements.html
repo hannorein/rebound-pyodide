@@ -13,49 +13,87 @@
         pyodide.runPython(`
         from js import document
         import rebound
-        import math
-        import matplotlib.pyplot as plt
-        import io, base64
 
         def getf(elementid):
             return float(document.getElementById(elementid).value)
         def setf(elementid, value):
             document.getElementById(elementid).value = value
-
-
-        `);
-      }
-          function update(e){
-            e.preventDefault();
-            pyodide.runPython(`
+        def getSim():
             sim = rebound.Simulation()
             sim.G = getf("G")
-            sim.add(m=getf("m0"), x=getf("x0"), y=getf("y0"), z=getf("vz0"), vx=getf("vx0"), vy=getf("vy0"), vz=getf("vz0"))
-            sim.add(m=getf("m1"), x=getf("x1"), y=getf("y1"), z=getf("vz1"), vx=getf("vx1"), vy=getf("vy1"), vz=getf("vz1"))
+            sim.add(m=getf("m0"), x=getf("x0"), y=getf("y0"), z=getf("z0"), vx=getf("vx0"), vy=getf("vy0"), vz=getf("vz0"))
+            sim.add(m=getf("m1"), x=getf("x1"), y=getf("y1"), z=getf("z1"), vx=getf("vx1"), vy=getf("vy1"), vz=getf("vz1"))
+            return sim
 
-            o = sim.calculate_orbits()[0]
-            setf("a", o.a)
-            setf("e", o.e)
-            setf("P", o.P)
+        `);
+      update(null);
+      }
+      function update(e){
+        if (e != null){
+            e.preventDefault();
+        }
+        pyodide.runPython(`
+        sim = getSim()
 
-            fig, ax = rebound.OrbitPlot(sim)
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png')
-            buf.seek(0)
-            img_str = 'data:image/png;base64,' + base64.b64encode(buf.read()).decode('UTF-8')
-            img_tag = document.getElementById('fig')
-            img_tag.src = img_str
-            buf.close()
-            plt.close(fig)
-     
-            `);
-            return false;
-          }
+        o = sim.calculate_orbits()[0]
+        setf("a", o.a)
+        setf("e", o.e)
+        setf("P", o.P)
+        setf("inc", o.inc)
+        setf("n", o.n)
+        setf("Omega", o.Omega)
+        setf("omega", o.omega)
+        setf("d", o.d)
+        setf("v", o.v)
+        setf("inc", o.inc)
+        setf("pomega", o.pomega)
+        setf("f", o.f)
+        setf("M", o.M)
+        setf("E", o.E)
+        setf("l", o.l)
+        setf("theta", o.theta)
+        setf("T", o.T)
+        setf("rhill", o.rhill)
+        setf("h", o.h)
+ 
+        `);
+        return false;
+      }
+      function updatePlot(e){
+        e.preventDefault();
+        pyodide.runPython(`
+        import matplotlib.pyplot as plt
+        import io, base64
+        sim = getSim()
+        fig, ax = rebound.OrbitPlot(sim)
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png')
+        buf.seek(0)
+        img_str = 'data:image/png;base64,' + base64.b64encode(buf.read()).decode('UTF-8')
+        img_tag = document.getElementById('fig')
+        img_tag.src = img_str
+        buf.close()
+        plt.close(fig)
+ 
+        `);
+        return false;
+      }
+      function setG(G){
+        document.getElementById("G").value = G;
+          return false;
+      }
+
       main();
     </script>
     <h1>REBOUND - Orbital Element Calculator</h1>
-    <form onclick="return update(event)" action="#" method="get">
-        <h3>Constants</h3>
+    <p>
+    This orbital element calculator is using the <a href="https://github.com/hannorein/rebound">REBOUND N-body package</a>. Specifically, it's using the <a href="https://rebound.readthedocs.io/en/latest/quickstart_firstexample/#python-version">python interface of REBOUND</a> to setup the simulation, then calls a <a href="https://github.com/hannorein/rebound/blob/main/src/tools.c#L950">C function</a> to calculate the transformations, and then uses matplotlib to render the orbit. All of this is done within a your browser using <a href="https://pyodide.org/">pyodide</a>. This has the advantage that you don't have to install anything and the server only needs to serve a static website. </p>
+    <form onsubmit="return update(event)" action="#" method="get">
+        <h3>Units</h3>
+        <p>
+        Since gravity is scale invariant, there are different ways to interpret units. By default the gravitational constant is set to 1 in which case the units can for example be interpreted as solar masses, astronomical units, years/2pi. If you wish to use SI units (kg, m, s), then <a href="#" onclick="return setG(6.67430e-11)">set G = 6.67e-11</a>.
+        </p>
+    <p>All angles are in radians. See the <a href="https://rebound.readthedocs.io/en/latest/orbitalelements/">REBOUND documentation</a> for more details on orbital elements. </p>
         <label for="G"> Gravitational constant</label><br>
         <input type="text" id="G" name="G" value="1.0">
         <table>
@@ -141,23 +179,86 @@
                     <table>
                         <tr>
                             <td> <label for="a">semi-major axis</label><br> </td>
-                            <td> <input type="text" id="a" name="a"> </td>
+                            <td> <input type="text" id="a" name="a" readonly> </td>
                         </tr>
                         <tr>
                             <td> <label for="a">eccentricity</label><br> </td>
-                            <td> <input type="text" id="e" name="e"> </td>
+                            <td> <input type="text" id="e" name="e" readonly> </td>
                         </tr>
                         <tr>
-                            <td> <label for="a">orbital period</label><br> </td>
-                            <td> <input type="text" id="P" name="P"> </td>
+                            <td> <label for="P">orbital period</label><br> </td>
+                            <td> <input type="text" id="P" name="P" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="n">mean motion</label><br> </td>
+                            <td> <input type="text" id="n" name="n" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="inc">inclination</label><br> </td>
+                            <td> <input type="text" id="inc" name="inc" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="Omega">longitude of ascending node</label><br> </td>
+                            <td> <input type="text" id="Omega" name="Omega" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="omega">argument of pericenter</label><br> </td>
+                            <td> <input type="text" id="omega" name="omega" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="pomega">longitude of pericenter, "pomega"</label><br> </td>
+                            <td> <input type="text" id="pomega" name="pomega" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="f">true anomaly</label><br> </td>
+                            <td> <input type="text" id="f" name="f" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="M">mean anomaly</label><br> </td>
+                            <td> <input type="text" id="M" name="M" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="E">eccentric anomaly</label><br> </td>
+                            <td> <input type="text" id="E" name="E" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="l">mean longitude</label><br> </td>
+                            <td> <input type="text" id="l" name="l" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="theta">true longitude</label><br> </td>
+                            <td> <input type="text" id="theta" name="theta" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="T">time of pericenter passage</label><br> </td>
+                            <td> <input type="text" id="T" name="T" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="rhill">Hill radius</label><br> </td>
+                            <td> <input type="text" id="rhill" name="rhill" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="d">radial distance</label><br> </td>
+                            <td> <input type="text" id="d" name="d" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="v">relative velocity</label><br> </td>
+                            <td> <input type="text" id="v" name="v" readonly> </td>
+                        </tr>
+                        <tr>
+                            <td> <label for="h">specific angular momentum</label><br> </td>
+                            <td> <input type="text" id="h" name="h" readonly> </td>
                         </tr>
                     </table>
                 </td>
             </tr>
         </table>
-    </form>
     </p>
-    <h2>Orbit illustration</h2>
+    </form>
+    <h2>Orbit visualization</h2>
+    <form onsubmit="return updatePlot(event)" action="#" method="get">
+        <button>Update visualization</button>
+    </form>
     <div>
         <img id="fig" /> 
     </div>
